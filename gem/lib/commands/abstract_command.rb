@@ -94,4 +94,24 @@ class Gem::AbstractCommand < Gem::Command
     ui.say("\n")
     password
   end
+
+  def get_latest_packaged_gem
+    @latest_packaged_gem ||= if File.directory?('pkg') && Dir.glob("pkg/*.gem")
+      available_packages = Dir.glob("pkg/*.gem")
+      available_names = available_packages.map {|a| a.match(/pkg\/(\D+)-[\d\.]+\.gem/)[1] }
+      available_names = available_names & available_names # remove duplicates
+      raise Gem::CommandLineError, "No gem name specified, or there is more than one gem packaged in ./pkg" if available_names.length > 1
+      available_packages.sort { |a,b|
+        a_versions = a.match(/-([^-]+)\.gem/)[1].split(/\./).map {|i| i.to_i}
+        b_versions = b.match(/-([^-]+)\.gem/)[1].split(/\./).map {|i| i.to_i}
+        a_versions[0] != b_versions[0] ? a_versions[0] <=> b_versions[0] : (
+          a_versions[1] != b_versions[1] ? a_versions[1] <=> b_versions[1] : (
+            a_versions[2] <=> b_versions[2]
+          )
+        )
+      }.last
+    else
+      nil
+    end
+  end
 end

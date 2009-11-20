@@ -25,7 +25,11 @@ class Gem::Commands::PushCommand < Gem::AbstractCommand
   def send_gem
     say "Pushing gem to Gemcutter..."
 
-    name = get_one_gem_name
+    name = begin
+      get_one_gem_name
+    rescue Gem::CommandLineError
+      get_latest_packaged_gem || raise Gem::CommandLineError, "No gem name was specified, and there are no packaged gems in ./pkg"
+    end
     response = make_request(:post, "gems") do |request|
       request.body = File.open(name, 'rb'){|io| io.read }
       request.add_field("Content-Length", request.body.size)
